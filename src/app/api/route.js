@@ -1,12 +1,6 @@
 import { NextResponse } from 'next/server';
 const Groq = require("groq-sdk");
 
-const DEFAULT_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
-
-function getRequestedModel(modelParam) {
-    return modelParam || DEFAULT_MODEL;
-}
-
 function getGroqClient() {
     const apiKey = process.env.GROQ_API_KEY;
 
@@ -18,9 +12,8 @@ function getGroqClient() {
 }
 
 // Call Groq LLaMA chat API
-async function getGroqChatCompletion(content, modelParam) {
+async function getGroqChatCompletion(content) {
     const groq = getGroqClient();
-    const model = getRequestedModel(modelParam);
 
     return groq.chat.completions.create({
         messages: [
@@ -29,13 +22,13 @@ async function getGroqChatCompletion(content, modelParam) {
                 content: content
             }
         ],
-        model
+        model: "llama-3.3-70b-versatile"
     });
 }
 
 // Process the response for clean code
-async function getCleanCode(content, modelParam) {
-    const chatCompletion = await getGroqChatCompletion(content, modelParam);
+async function getCleanCode(content) {
+    const chatCompletion = await getGroqChatCompletion(content);
     let message = chatCompletion.choices[0]?.message?.content || "";
 
     // Extract code inside ``` blocks
@@ -58,19 +51,18 @@ async function handleRequest(request) {
     const { searchParams } = new URL(request.url);
     const contentParam = searchParams.get('content');
     const codeParam = searchParams.get('code');
-    const modelParam = searchParams.get('model');
 
     if (codeParam) {
         // Return clean code as plain text
-        const response = await getCleanCode(codeParam, modelParam);
+        const response = await getCleanCode(codeParam);
         return new NextResponse(response, {
             headers: { "Content-Type": "text/plain" }
         });
     }
 
-    const response = await getGroqChatCompletion(contentParam || "Hi, how are you?", modelParam);
+    const response = await getGroqChatCompletion(contentParam || "Hi, how are you?");
     const message = response.choices[0]?.message?.content || "";
-    return NextResponse.json({ message, model: getRequestedModel(modelParam) });
+    return NextResponse.json({ message });
 }
 
 export async function GET(request) {
