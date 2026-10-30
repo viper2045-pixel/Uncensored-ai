@@ -8,21 +8,12 @@ import { FaLinkedin, FaTwitter, FaGithub } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { v4 as uuidv4 } from "uuid";
 
-const MODEL_OPTIONS = [
-  { value: "llama-3.3-70b-versatile", label: "Llama 3.3 70B" },
-  { value: "llama-3.1-8b-instant", label: "Llama 3.1 8B" },
-  { value: "mixtral-8x7b-32768", label: "Mixtral 8x7B" },
-];
-
 export default function Home() {
   const [userInput, setUserInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [allUserInputs, setAllUserInputs] = useState("");
   const [userId, setUserId] = useState(null);
-  const [selectedModel, setSelectedModel] = useState(
-    process.env.NEXT_PUBLIC_GROQ_MODEL || MODEL_OPTIONS[0].value
-  );
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -71,12 +62,12 @@ export default function Home() {
       }
     );
     escaped = escaped.replace(
-      /((?:^[*-]\s.*$(?:\n|$))+)/gm,
+      /((?:^[*\\-]\s.*$(?:\n|$))+)/gm,
       (match) => {
         const items = match
           .trim()
           .split("\n")
-          .map((line) => line.replace(/^[*-]\s/, ""))
+          .map((line) => line.replace(/^[*\\-]\s/, ""))
           .map((item) => `<li>${item}</li>`)
           .join("");
         return `<ul>${items}</ul>`;
@@ -102,7 +93,7 @@ export default function Home() {
       setAllUserInputs((prev) => (prev ? `${prev}\n${nextPrompt}` : nextPrompt));
 
       const response = await fetch(
-        `/api?content=${encodeURIComponent(allUserInputs + "\n" + nextPrompt)}&model=${encodeURIComponent(selectedModel)}`
+        `/api?content=${encodeURIComponent(allUserInputs + "\n" + nextPrompt)}`
       );
       const data = await response.json();
 
@@ -190,21 +181,6 @@ export default function Home() {
               transition={{ duration: 1.5, ease: [0.4, 0.0, 0.2, 1] }}
               className="flex flex-col gap-3 w-full max-w-xl mt-6"
             >
-              <div className="flex items-center gap-3">
-                <label className="text-sm text-gray-300">Model</label>
-                <select
-                  value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
-                  className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {MODEL_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               <div className="flex gap-4">
                 <input
                   type="text"
@@ -287,17 +263,6 @@ export default function Home() {
       {hasInteracted && (
         <div className="w-full border-t border-gray-700 bg-gray-800 p-4 fixed bottom-0 transition-all ease-in-out duration-500 z-10 font-mono">
           <div className="max-w-3xl mx-auto flex items-center gap-4">
-            <select
-              value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
-              className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {MODEL_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
             <input
               type="text"
               placeholder="Message Llama AI..."
